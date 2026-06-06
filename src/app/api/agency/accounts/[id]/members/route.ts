@@ -11,9 +11,10 @@ function supabaseAdmin() {
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const ctx = await getCurrentAccount();
 
     if (!ctx.isAgencyOwner) {
@@ -24,11 +25,11 @@ export async function GET(
     const { data, error } = await admin
       .from("profiles")
       .select("id, full_name, email, account_role, is_agency_owner")
-      .eq("account_id", params.id)
+      .eq("account_id", id)
       .order("created_at", { ascending: true });
 
     if (error) {
-      console.error(`[GET /api/agency/accounts/${params.id}/members] fetch error:`, error);
+      console.error(`[GET /api/agency/accounts/${id}/members] fetch error:`, error);
       return NextResponse.json({ error: "Failed to load members" }, { status: 500 });
     }
 

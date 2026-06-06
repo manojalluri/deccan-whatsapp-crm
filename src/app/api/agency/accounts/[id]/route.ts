@@ -11,9 +11,10 @@ function supabaseAdmin() {
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const ctx = await getCurrentAccount();
 
     if (!ctx.isAgencyOwner) {
@@ -26,10 +27,10 @@ export async function DELETE(
     const { data: profiles, error: fetchError } = await admin
       .from("profiles")
       .select("user_id")
-      .eq("account_id", params.id);
+      .eq("account_id", id);
 
     if (fetchError) {
-      console.error(`[DELETE /api/agency/accounts/${params.id}] fetch profiles error:`, fetchError);
+      console.error(`[DELETE /api/agency/accounts/${id}] fetch profiles error:`, fetchError);
       return NextResponse.json({ error: "Failed to locate workspace members for deletion." }, { status: 500 });
     }
 
@@ -47,10 +48,10 @@ export async function DELETE(
     const { error: deleteAccountError } = await admin
       .from("accounts")
       .delete()
-      .eq("id", params.id);
+      .eq("id", id);
 
     if (deleteAccountError) {
-      console.error(`[DELETE /api/agency/accounts/${params.id}] delete error:`, deleteAccountError);
+      console.error(`[DELETE /api/agency/accounts/${id}] delete error:`, deleteAccountError);
       return NextResponse.json({ error: "Failed to delete workspace." }, { status: 500 });
     }
 

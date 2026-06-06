@@ -11,9 +11,10 @@ function supabaseAdmin() {
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const ctx = await getCurrentAccount();
 
     if (!ctx.isAgencyOwner) {
@@ -27,12 +28,12 @@ export async function DELETE(
     // is from profiles -> auth.users without ON DELETE CASCADE.
     // Wait, let's explicitly delete the profile first to be safe,
     // though auth.users usually cascade deletes its profiles.
-    await admin.from("profiles").delete().eq("user_id", params.id);
+    await admin.from("profiles").delete().eq("user_id", id);
 
-    const { error: deleteUserError } = await admin.auth.admin.deleteUser(params.id);
+    const { error: deleteUserError } = await admin.auth.admin.deleteUser(id);
 
     if (deleteUserError) {
-      console.error(`[DELETE /api/agency/users/${params.id}] auth delete error:`, deleteUserError);
+      console.error(`[DELETE /api/agency/users/${id}] auth delete error:`, deleteUserError);
       return NextResponse.json({ error: "Failed to delete user account." }, { status: 500 });
     }
 
