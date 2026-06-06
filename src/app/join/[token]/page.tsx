@@ -259,26 +259,12 @@ export default function JoinPage() {
               >
                 Try again
               </Button>
-              <Link href="/signup">
-                <Button
-                  variant="outline"
-                  className="w-full border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
-                >
-                  Create a new account instead
-                </Button>
-              </Link>
             </>
           ) : (
             <>
-              <Link href="/signup">
-                <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                  Create a new account instead
-                </Button>
-              </Link>
               <Link href="/login">
                 <Button
-                  variant="outline"
-                  className="w-full border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   Sign in
                 </Button>
@@ -412,17 +398,11 @@ export default function JoinPage() {
     <Card className="w-full max-w-md border-slate-800 bg-slate-900">
       {inviteHeader}
       <CardContent className="flex flex-col gap-2">
-        <Link href={`/signup?invite=${encodeURIComponent(token!)}`}>
-          <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-            Create account &amp; join
-          </Button>
-        </Link>
         <Link href={`/login?invite=${encodeURIComponent(token!)}`}>
           <Button
-            variant="outline"
-            className="w-full border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            I already have an account
+            Sign in to accept
           </Button>
         </Link>
       </CardContent>

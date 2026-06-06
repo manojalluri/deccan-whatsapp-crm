@@ -89,6 +89,8 @@ export interface AccountContext {
   role: AccountRole;
   /** Lightweight account meta — id + name. */
   account: { id: string; name: string };
+  /** True if the caller is an agency owner. */
+  isAgencyOwner: boolean;
 }
 
 /**
@@ -121,7 +123,7 @@ export async function getCurrentAccount(): Promise<AccountContext> {
   // rather than silently returning a half-populated profile.
   const { data, error } = await supabase
     .from("profiles")
-    .select("account_id, account_role, account:accounts!inner(id, name)")
+    .select("account_id, account_role, is_agency_owner, account:accounts!inner(id, name)")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -152,6 +154,7 @@ export async function getCurrentAccount(): Promise<AccountContext> {
     accountId: data.account_id,
     role: data.account_role,
     account: { id: accountRow.id, name: accountRow.name },
+    isAgencyOwner: data.is_agency_owner ?? false,
   };
 }
 

@@ -34,6 +34,8 @@ function SignupPageInner() {
   // points back at /join/<token> so the user lands on the redeem
   // step after verifying instead of being dropped on /dashboard.
   const inviteToken = searchParams.get("invite");
+  const secret = searchParams.get("secret");
+  const requiredSecret = process.env.NEXT_PUBLIC_AGENCY_SECRET;
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -43,6 +45,24 @@ function SignupPageInner() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const supabase = createClient();
+
+  if (secret !== requiredSecret) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
+        <Card className="w-full max-w-md border-slate-800 bg-slate-900 text-center py-10">
+          <CardTitle className="text-xl text-white mb-2">Signups are closed</CardTitle>
+          <CardDescription className="text-slate-400 mb-6">
+            New accounts must be created by the agency administrator.
+          </CardDescription>
+          <Link href="/login">
+            <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white">
+              Back to sign in
+            </Button>
+          </Link>
+        </Card>
+      </div>
+    );
+  }
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,8 +163,8 @@ function SignupPageInner() {
           </CardTitle>
           <CardDescription className="text-slate-400">
             {inviteToken
-              ? "Verify your email, then accept the invitation to join your team."
-              : "Get started with CRM Template for WhatsApp"}
+              ? "Sign up to accept the invitation to join your team."
+              : "Get started with Deccan CRM"}
           </CardDescription>
         </CardHeader>
         <CardContent>

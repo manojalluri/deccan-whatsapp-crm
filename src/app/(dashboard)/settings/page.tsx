@@ -18,6 +18,8 @@ import { PasswordForm } from '@/components/settings/password-form';
 import { SessionsCard } from '@/components/settings/sessions-card';
 import { AppearancePanel } from '@/components/settings/appearance-panel';
 import { MembersTab } from '@/components/settings/members-tab';
+import { AgencyTab } from '@/components/settings/agency-tab';
+import { useAuth } from '@/hooks/use-auth';
 
 const TAB_VALUES = [
   'profile',
@@ -26,6 +28,7 @@ const TAB_VALUES = [
   'tags',
   'appearance',
   'members',
+  'agency',
 ] as const;
 type TabValue = (typeof TAB_VALUES)[number];
 
@@ -36,6 +39,7 @@ function isTabValue(v: string | null): v is TabValue {
 export default function SettingsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isAgencyOwner } = useAuth();
 
   // The URL is the single source of truth for the active tab — no
   // local state, no sync effect. A previous revision duplicated this
@@ -104,6 +108,15 @@ export default function SettingsPage() {
             <UsersRound className="size-4" />
             Members
           </TabsTrigger>
+          {isAgencyOwner && (
+            <TabsTrigger
+              value="agency"
+              className="data-active:bg-slate-800 data-active:text-primary text-slate-400"
+            >
+              <User className="size-4" />
+              Agency
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
@@ -131,6 +144,12 @@ export default function SettingsPage() {
         <TabsContent value="members">
           <MembersTab />
         </TabsContent>
+
+        {isAgencyOwner && (
+          <TabsContent value="agency">
+            <AgencyTab />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
