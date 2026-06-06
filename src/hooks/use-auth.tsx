@@ -96,6 +96,8 @@ interface AuthContextValue {
   canSendMessages: boolean;
   /** True if the caller is an agency owner with super admin privileges. */
   isAgencyOwner: boolean;
+  /** True if the account's subscription has expired. */
+  isExpired: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -131,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // missing account collapses to null rather than a half-
           // populated row (shouldn't happen post-017 NOT NULL, but
           // belt-and-braces against forks running older schemas).
-          "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, is_agency_owner, account:accounts!inner(id, name)",
+          "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, is_agency_owner, account:accounts!inner(id, name, expires_at)",
         )
         .eq("user_id", userId)
         .maybeSingle();
@@ -278,11 +280,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // every consumer render. Cheap regardless, but the memo also gives
   // each derived value a stable identity for React.memo / useEffect
   // dependencies downstream.
-  const derived = useMemo(() => {
+  const resolvedContext = useMemo((): AuthContextValue => {
     const role = profile?.account_role ?? null;
+    const isAgencyOwner = profile?.is_agency_owner ?? false;
+    let isExpired = false;
+    if (!isAgencyOwner && profile?.account?.expires_at) {
+      isExpired = new Date(profile.account.expires_at) < new Date();
+    }
+
     return {
-      accountRole: role,
+      userId: user?.id ?? null,
       accountId: profile?.account_id ?? null,
+      accountRole: role,
+      accountName: profile?.account?.name ?? null,
+      profile: profile ?? null,
+      loading,
+      profileLoading,
+      signOut,
+      refreshProfile,
+      account,
       isOwner: role === "owner",
       isAdmin: role === "admin",
       isAgent: role === "agent",
@@ -290,23 +306,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       canManageMembers: role ? canManageMembersFor(role) : false,
       canEditSettings: role ? canEditSettingsFor(role) : false,
       canSendMessages: role ? canSendMessagesFor(role) : false,
-      isAgencyOwner: profile?.is_agency_owner ?? false,
+      isAgencyOwner,
+      isExpired,
     };
-  }, [profile?.account_role, profile?.account_id, profile?.is_agency_owner]);
+  }, [profile?.account_role, profile?.account_id, profile?.is_agency_owner, profile?.account?.expires_at, user?.id, profile, loading, profileLoading, signOut, refreshProfile, account]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        profile,
-        loading,
-        profileLoading,
-        signOut,
-        refreshProfile,
-        account,
-        ...derived,
-      }}
-    >
+    <AuthContext.Provider value={resolvedContext}>
       {children}
     </AuthContext.Provider>
   );
@@ -343,6 +349,7 @@ export function useAuth(): AuthContextValue {
       canEditSettings: false,
       canSendMessages: false,
       isAgencyOwner: false,
+      isExpired: false,
     };
   }
   return ctx;

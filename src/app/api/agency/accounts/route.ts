@@ -20,7 +20,7 @@ export async function GET() {
     const admin = supabaseAdmin();
     const { data, error } = await admin
       .from("accounts")
-      .select("id, name, created_at, owner_user_id")
+      .select("id, name, created_at, owner_user_id, expires_at, profiles(id)")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -28,7 +28,13 @@ export async function GET() {
       return NextResponse.json({ error: "Failed to load accounts" }, { status: 500 });
     }
 
-    return NextResponse.json({ accounts: data ?? [] });
+    const accountsWithCounts = data?.map((acc: any) => ({
+      ...acc,
+      memberCount: acc.profiles?.length || 0,
+      profiles: undefined, // remove full array from response
+    })) ?? [];
+
+    return NextResponse.json({ accounts: accountsWithCounts });
   } catch (err) {
     return toErrorResponse(err);
   }

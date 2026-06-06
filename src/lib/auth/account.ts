@@ -91,6 +91,8 @@ export interface AccountContext {
   account: { id: string; name: string };
   /** True if the caller is an agency owner. */
   isAgencyOwner: boolean;
+  /** True if the account's subscription has expired. */
+  isExpired: boolean;
 }
 
 /**
@@ -123,7 +125,7 @@ export async function getCurrentAccount(): Promise<AccountContext> {
   // rather than silently returning a half-populated profile.
   const { data, error } = await supabase
     .from("profiles")
-    .select("account_id, account_role, is_agency_owner, account:accounts!inner(id, name)")
+    .select("account_id, account_role, is_agency_owner, account:accounts!inner(id, name, expires_at)")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -148,13 +150,22 @@ export async function getCurrentAccount(): Promise<AccountContext> {
   // for `!inner` single-record joins; normalise to a single object.
   const accountRow = Array.isArray(data.account) ? data.account[0] : data.account;
 
+  const isAgencyOwner = data.is_agency_owner ?? false;
+  // Account is expired if there is an expiration date and it's in the past.
+  // Agency Owners are immune to expirations when impersonating.
+  let isExpired = false;
+  if (!isAgencyOwner && accountRow.expires_at) {
+    isExpired = new Date(accountRow.expires_at) < new Date();
+  }
+
   return {
     supabase,
     userId: user.id,
     accountId: data.account_id,
     role: data.account_role,
     account: { id: accountRow.id, name: accountRow.name },
-    isAgencyOwner: data.is_agency_owner ?? false,
+    isAgencyOwner,
+    isExpired,
   };
 }
 

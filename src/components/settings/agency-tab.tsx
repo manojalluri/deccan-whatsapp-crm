@@ -11,32 +11,35 @@ interface AgencyAccount {
   name: string;
   created_at: string;
   owner_user_id: string;
+  memberCount?: number;
+  expires_at?: string | null;
 }
 
 export function AgencyTab() {
   const [accounts, setAccounts] = useState<AgencyAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingExpiryId, setEditingExpiryId] = useState<string | null>(null);
+  const [expiryInput, setExpiryInput] = useState<string>('');
   const { accountId, refreshProfile } = useAuth();
 
-  useEffect(() => {
-    async function loadAccounts() {
-      try {
-        const res = await fetch('/api/agency/accounts');
-        const data = await res.json();
-        
-        if (!res.ok) {
-          throw new Error(data.error || 'Failed to load accounts');
-        }
-        
-        setAccounts(data.accounts);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
+  const loadAccounts = async () => {
+    try {
+      const res = await fetch('/api/agency/accounts');
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to load accounts');
       }
+      
+      setAccounts(data.accounts);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
     }
-    
+  };
+  useEffect(() => {
     loadAccounts();
   }, []);
 
@@ -58,6 +61,25 @@ export function AgencyTab() {
       window.location.href = '/dashboard';
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Error switching accounts');
+    }
+  const handleUpdateExpiry = async (targetId: string) => {
+    try {
+      // Empty input means lifetime / never expires
+      const expiresAt = expiryInput ? new Date(expiryInput).toISOString() : null;
+      
+      const res = await fetch('/api/agency/accounts/subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountId: targetId, expiresAt })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update subscription');
+      
+      setEditingExpiryId(null);
+      await loadAccounts();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Error updating subscription');
     }
   };
 
@@ -81,6 +103,8 @@ export function AgencyTab() {
                 <thead className="bg-slate-800/50 text-xs uppercase text-slate-400">
                   <tr>
                     <th className="px-6 py-3 font-medium">Workspace Name</th>
+                    <th className="px-6 py-3 font-medium text-center">Members</th>
+                    <th className="px-6 py-3 font-medium">Expires</th>
                     <th className="px-6 py-3 font-medium">Created On</th>
                     <th className="px-6 py-3 font-medium text-right">Action</th>
                   </tr>
@@ -96,6 +120,38 @@ export function AgencyTab() {
                             <span className="bg-primary/20 text-primary text-xs px-2 py-0.5 rounded-full">
                               Active
                             </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          {acc.memberCount}
+                        </td>
+                        <td className="px-6 py-4">
+                          {editingExpiryId === acc.id ? (
+                            <div className="flex items-center gap-2">
+                              <input 
+                                type="date" 
+                                className="bg-slate-800 border border-slate-700 text-sm rounded px-2 py-1 text-white"
+                                value={expiryInput}
+                                onChange={(e) => setExpiryInput(e.target.value)}
+                              />
+                              <Button size="sm" onClick={() => handleUpdateExpiry(acc.id)}>Save</Button>
+                              <Button size="sm" variant="ghost" onClick={() => setEditingExpiryId(null)}>Cancel</Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              {acc.expires_at ? format(new Date(acc.expires_at), 'MMM d, yyyy') : 'Never'}
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-6 px-2 text-xs text-slate-400 hover:text-white"
+                                onClick={() => {
+                                  setEditingExpiryId(acc.id);
+                                  setExpiryInput(acc.expires_at ? new Date(acc.expires_at).toISOString().split('T')[0] : '');
+                                }}
+                              >
+                                Edit
+                              </Button>
+                            </div>
                           )}
                         </td>
                         <td className="px-6 py-4">
