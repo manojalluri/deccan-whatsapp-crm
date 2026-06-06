@@ -62,6 +62,8 @@ export function AgencyTab() {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Error switching accounts');
     }
+  };
+
   const handleUpdateExpiry = async (targetId: string) => {
     try {
       // Empty input means lifetime / never expires
