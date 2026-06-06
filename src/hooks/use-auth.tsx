@@ -289,15 +289,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return {
-      userId: user?.id ?? null,
-      accountId: profile?.account_id ?? null,
-      accountRole: role,
-      accountName: profile?.account?.name ?? null,
-      profile: profile ?? null,
+      user,
+      profile,
       loading,
       profileLoading,
       signOut,
       refreshProfile,
+      accountId: profile?.account_id ?? null,
+      accountRole: role,
       account,
       isOwner: role === "owner",
       isAdmin: role === "admin",
@@ -309,7 +308,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAgencyOwner,
       isExpired,
     };
-  }, [profile?.account_role, profile?.account_id, profile?.is_agency_owner, profile?.account?.expires_at, user?.id, profile, loading, profileLoading, signOut, refreshProfile, account]);
+  }, [profile?.account_role, profile?.account_id, profile?.is_agency_owner, profile?.account?.expires_at, user, profile, loading, profileLoading, signOut, refreshProfile, account]);
 
   return (
     <AuthContext.Provider value={resolvedContext}>
