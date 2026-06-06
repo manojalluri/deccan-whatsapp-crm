@@ -39,6 +39,7 @@ interface Profile {
 interface AccountSummary {
   id: string;
   name: string;
+  expires_at?: string | null;
 }
 
 interface AuthContextValue {
@@ -155,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // form before reading.
         const accountRow = Array.isArray(data.account)
           ? data.account[0] ?? null
-          : (data.account as { id: string; name: string } | null);
+          : (data.account as { id: string; name: string; expires_at?: string | null } | null);
 
         // Narrow the DB enum into our AccountRole union. The DB
         // constraint should make this unconditional, but a future
@@ -284,8 +285,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const role = profile?.account_role ?? null;
     const isAgencyOwner = profile?.email === 'manojalluri2727@gmail.com';
     let isExpired = false;
-    if (!isAgencyOwner && profile?.account?.expires_at) {
-      isExpired = new Date(profile.account.expires_at) < new Date();
+    if (!isAgencyOwner && account?.expires_at) {
+      isExpired = new Date(account.expires_at) < new Date();
     }
 
     return {
@@ -308,7 +309,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAgencyOwner,
       isExpired,
     };
-  }, [profile?.account_role, profile?.account_id, profile?.is_agency_owner, profile?.account?.expires_at, user, profile, loading, profileLoading, signOut, refreshProfile, account]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.account_role, profile?.account_id, profile?.is_agency_owner, account?.expires_at, user, profile, loading, profileLoading, signOut, refreshProfile, account]);
 
   return (
     <AuthContext.Provider value={resolvedContext}>
