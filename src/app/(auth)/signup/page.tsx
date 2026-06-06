@@ -38,6 +38,7 @@ function SignupPageInner() {
   const requiredSecret = process.env.NEXT_PUBLIC_AGENCY_SECRET;
 
   const [fullName, setFullName] = useState("");
+  const [workspaceName, setWorkspaceName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -94,6 +95,7 @@ function SignupPageInner() {
       options: {
         data: {
           full_name: fullName,
+          workspace_name: workspaceName || fullName,
         },
         ...(emailRedirectTo ? { emailRedirectTo } : {}),
       },
@@ -177,7 +179,7 @@ function SignupPageInner() {
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="fullName" className="text-slate-300">
-                Full name
+                Full name (Client Admin)
               </Label>
               <Input
                 id="fullName"
@@ -185,6 +187,21 @@ function SignupPageInner() {
                 placeholder="John Doe"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                required
+                className="border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus-visible:border-primary focus-visible:ring-primary/20"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="workspaceName" className="text-slate-300">
+                Company / Workspace Name
+              </Label>
+              <Input
+                id="workspaceName"
+                type="text"
+                placeholder="Acme Corp"
+                value={workspaceName}
+                onChange={(e) => setWorkspaceName(e.target.value)}
                 required
                 className="border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus-visible:border-primary focus-visible:ring-primary/20"
               />
