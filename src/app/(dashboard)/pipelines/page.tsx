@@ -27,6 +27,7 @@ import { Label } from "@/components/ui/label";
 import { GitBranch, Plus, ChevronDown, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { useCan } from "@/hooks/use-can";
+import { useAuth } from "@/hooks/use-auth";
 import { GatedButton } from "@/components/ui/gated-button";
 
 // Pipeline creation is admin-class (settings-tier write under
@@ -45,6 +46,7 @@ const SPEC_DEFAULT_STAGES = [
 
 export default function PipelinesPage() {
   const supabase = createClient();
+  const { profile } = useAuth();
   const canEditSettings = useCan("edit-settings");
   const canCreateDeals = useCan("send-messages");
 
@@ -114,7 +116,7 @@ export default function PipelinesPage() {
 
     const { data: pipeline, error } = await supabase
       .from("pipelines")
-      .insert({ user_id: user.id, name: "Sales Pipeline" })
+      .insert({ user_id: user.id, account_id: profile?.account_id, name: "Sales Pipeline" })
       .select()
       .single();
 
@@ -141,7 +143,7 @@ export default function PipelinesPage() {
       setLoading(true);
       let list = await loadPipelines();
 
-      if (list.length === 0 && !seedAttempted.current) {
+      if (list.length === 0 && !seedAttempted.current && profile?.account_id) {
         seedAttempted.current = true;
         const seeded = await seedDefaultPipeline();
         if (seeded) list = await loadPipelines();
@@ -161,7 +163,7 @@ export default function PipelinesPage() {
     return () => {
       cancelled = true;
     };
-  }, [loadPipelines, seedDefaultPipeline]);
+  }, [loadPipelines, seedDefaultPipeline, profile?.account_id]);
 
   // Load stages + deals whenever selected pipeline changes.
   // Clearing on no-selection is a legitimate sync with URL/prop
@@ -257,7 +259,7 @@ export default function PipelinesPage() {
 
     const { data: pipeline, error } = await supabase
       .from("pipelines")
-      .insert({ user_id: user.id, name })
+      .insert({ user_id: user.id, account_id: profile?.account_id, name })
       .select()
       .single();
 

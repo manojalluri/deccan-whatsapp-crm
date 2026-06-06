@@ -13,26 +13,12 @@ import { getFlowTemplate } from '@/lib/flows/templates'
  * routes themselves are open.
  */
 
-async function requireUser(): Promise<
-  | { ok: true; userId: string; supabase: Awaited<ReturnType<typeof createClient>> }
-  | { ok: false; status: number; body: { error: string } }
-> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) {
-    return { ok: false, status: 401, body: { error: 'Unauthorized' } }
-  }
-  return { ok: true, userId: user.id, supabase }
-}
+import { getCurrentAccount, toErrorResponse, ForbiddenError } from '@/lib/auth/account'
 
 export async function GET() {
-  const guard = await requireUser()
-  if (!guard.ok) {
-    return NextResponse.json(guard.body, { status: guard.status })
-  }
-  const { supabase } = guard
+  try {
+    const ctx = await getCurrentAccount()
+    const { supabase } = ctx
 
   const { data, error } = await supabase
     .from('flows')
@@ -41,15 +27,18 @@ export async function GET() {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-  return NextResponse.json({ flows: data ?? [] })
+    return NextResponse.json({ flows: data ?? [] })
+  } catch (error) {
+    return toErrorResponse(error)
+  }
 }
 
 export async function POST(request: Request) {
-  const guard = await requireUser()
-  if (!guard.ok) {
-    return NextResponse.json(guard.body, { status: guard.status })
-  }
-  const { userId } = guard
+  try {
+    const ctx = await getCurrentAccount()
+    const { user, account } = ctx
+    const userId = user.id
+    const accountId = account.id
 
   const body = (await request.json().catch(() => null)) as
     | {
@@ -85,6 +74,7 @@ export async function POST(request: Request) {
       .from('flows')
       .insert({
         user_id: userId,
+        account_id: accountId,
         name: body.name?.trim() || template.name,
         description: template.description,
         status: 'draft',
@@ -133,6 +123,7 @@ export async function POST(request: Request) {
     .from('flows')
     .insert({
       user_id: userId,
+      account_id: accountId,
       name: body.name.trim(),
       description: body.description ?? null,
       status: 'draft',
@@ -148,4 +139,7 @@ export async function POST(request: Request) {
     )
   }
   return NextResponse.json({ flow: data }, { status: 201 })
+  } catch (error) {
+    return toErrorResponse(error)
+  }
 }
