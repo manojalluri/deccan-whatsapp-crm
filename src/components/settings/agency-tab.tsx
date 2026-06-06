@@ -15,6 +15,87 @@ interface AgencyAccount {
   expires_at?: string | null;
 }
 
+interface Member {
+  id: string;
+  full_name: string | null;
+  email: string;
+  account_role: string;
+  is_agency_owner: boolean;
+}
+
+function ViewMembersModal({
+  accountId,
+  accountName,
+  onClose
+}: {
+  accountId: string;
+  accountName: string;
+  onClose: () => void;
+}) {
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const res = await fetch(`/api/agency/accounts/${accountId}/members`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to load members");
+        setMembers(data.members || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error loading members");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMembers();
+  }, [accountId]);
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm px-4">
+      <div className="max-w-xl w-full bg-slate-900 border border-slate-800 rounded-xl shadow-2xl flex flex-col max-h-[80vh]">
+        <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-bold text-white">Workspace Members</h2>
+            <p className="text-sm text-slate-400 mt-1">{accountName}</p>
+          </div>
+          <Button variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white">Close</Button>
+        </div>
+        <div className="p-6 overflow-y-auto">
+          {loading ? (
+            <div className="text-sm text-slate-400">Loading members...</div>
+          ) : error ? (
+            <div className="text-sm text-red-400">{error}</div>
+          ) : (
+            <div className="space-y-4">
+              {members.map(m => (
+                <div key={m.id} className="flex items-center justify-between p-3 rounded-lg border border-slate-800 bg-slate-950">
+                  <div>
+                    <div className="font-medium text-white">{m.full_name || 'Unnamed User'}</div>
+                    <div className="text-sm text-slate-400">{m.email}</div>
+                  </div>
+                  <div className="flex gap-2">
+                    {m.is_agency_owner && (
+                      <span className="bg-purple-500/20 text-purple-400 text-xs px-2 py-1 rounded border border-purple-500/30">
+                        Agency Owner
+                      </span>
+                    )}
+                    <span className="bg-slate-800 text-slate-300 text-xs px-2 py-1 rounded capitalize border border-slate-700">
+                      {m.account_role}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {members.length === 0 && <div className="text-slate-500 text-sm">No members found.</div>}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AddUserModal({
   accounts,
   onClose,
@@ -137,6 +218,7 @@ export function AgencyTab() {
   const [editingExpiryId, setEditingExpiryId] = useState<string | null>(null);
   const [expiryInput, setExpiryInput] = useState<string>('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [viewingMembersAcc, setViewingMembersAcc] = useState<{ id: string; name: string } | null>(null);
   const { accountId, refreshProfile } = useAuth();
 
   const loadAccounts = async () => {
@@ -246,7 +328,12 @@ export function AgencyTab() {
                           )}
                         </td>
                         <td className="px-6 py-4 text-center">
-                          {acc.memberCount}
+                          <button 
+                            onClick={() => setViewingMembersAcc({ id: acc.id, name: acc.name })}
+                            className="text-primary hover:underline font-medium hover:text-primary/80 transition-colors cursor-pointer"
+                          >
+                            {acc.memberCount} members
+                          </button>
                         </td>
                         <td className="px-6 py-4">
                           {editingExpiryId === acc.id ? (
@@ -316,6 +403,14 @@ export function AgencyTab() {
             setShowAddModal(false);
             loadAccounts();
           }} 
+        />
+      )}
+
+      {viewingMembersAcc && (
+        <ViewMembersModal 
+          accountId={viewingMembersAcc.id}
+          accountName={viewingMembersAcc.name}
+          onClose={() => setViewingMembersAcc(null)}
         />
       )}
     </div>
