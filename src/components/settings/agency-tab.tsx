@@ -15,12 +15,128 @@ interface AgencyAccount {
   expires_at?: string | null;
 }
 
+function AddUserModal({
+  accounts,
+  onClose,
+  onSuccess
+}: {
+  accounts: AgencyAccount[];
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [workspaceAction, setWorkspaceAction] = useState<"new" | "existing">("new");
+  const [workspaceName, setWorkspaceName] = useState("");
+  const [accountId, setAccountId] = useState(accounts.length > 0 ? accounts[0].id : "");
+  const [role, setRole] = useState<"admin" | "agent" | "viewer">("agent");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/agency/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName, email, password, workspaceAction, workspaceName, accountId, role
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create user");
+      onSuccess();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error creating user");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-start justify-center bg-slate-950/80 backdrop-blur-sm px-4 overflow-y-auto pt-20 pb-10">
+      <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl">
+        <h2 className="text-xl font-bold text-white mb-4">Add Client / User</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm text-slate-400 mb-1">Full Name</label>
+            <input required type="text" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white" value={fullName} onChange={e => setFullName(e.target.value)} />
+          </div>
+          <div>
+            <label className="block text-sm text-slate-400 mb-1">Email</label>
+            <input required type="email" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white" value={email} onChange={e => setEmail(e.target.value)} />
+          </div>
+          <div>
+            <label className="block text-sm text-slate-400 mb-1">Password (give this to the user)</label>
+            <input required type="text" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white" value={password} onChange={e => setPassword(e.target.value)} />
+          </div>
+
+          <div className="pt-4 border-t border-slate-800">
+            <label className="block text-sm font-medium text-slate-300 mb-2">Workspace Assignment</label>
+            <div className="flex gap-4 mb-4">
+              <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer">
+                <input type="radio" checked={workspaceAction === "new"} onChange={() => setWorkspaceAction("new")} />
+                New Workspace
+              </label>
+              <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer">
+                <input type="radio" checked={workspaceAction === "existing"} onChange={() => setWorkspaceAction("existing")} />
+                Existing Workspace
+              </label>
+            </div>
+
+            {workspaceAction === "new" ? (
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">Workspace Name</label>
+                <input required type="text" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white" value={workspaceName} onChange={e => setWorkspaceName(e.target.value)} />
+                <p className="text-xs text-slate-500 mt-1">This user will be the Owner of the new workspace.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">Select Workspace</label>
+                  <select required className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white" value={accountId} onChange={e => setAccountId(e.target.value)}>
+                    <option value="" disabled>Select a workspace</option>
+                    {accounts.map(acc => (
+                      <option key={acc.id} value={acc.id}>{acc.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">Role</label>
+                  <select required className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white" value={role} onChange={e => setRole(e.target.value as any)}>
+                    <option value="admin">Admin</option>
+                    <option value="agent">Agent</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {error && <div className="text-red-400 text-sm mt-2">{error}</div>}
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Creating..." : "Create User"}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export function AgencyTab() {
   const [accounts, setAccounts] = useState<AgencyAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingExpiryId, setEditingExpiryId] = useState<string | null>(null);
   const [expiryInput, setExpiryInput] = useState<string>('');
+  const [showAddModal, setShowAddModal] = useState(false);
   const { accountId, refreshProfile } = useAuth();
 
   const loadAccounts = async () => {
@@ -88,11 +204,16 @@ export function AgencyTab() {
   return (
     <div className="space-y-6">
       <Card className="border-slate-800 bg-slate-900">
-        <CardHeader>
-          <CardTitle className="text-white">Agency Workspaces</CardTitle>
-          <CardDescription className="text-slate-400">
-            You are an Agency Owner. From here, you can see all client accounts on this server and instantly enter their workspace.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between">
+          <div>
+            <CardTitle className="text-white">Agency Workspaces</CardTitle>
+            <CardDescription className="text-slate-400 mt-1">
+              You are an Agency Owner. From here, you can see all client accounts on this server and instantly enter their workspace.
+            </CardDescription>
+          </div>
+          <Button onClick={() => setShowAddModal(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0">
+            + Add Client / User
+          </Button>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -186,6 +307,17 @@ export function AgencyTab() {
           )}
         </CardContent>
       </Card>
+      
+      {showAddModal && (
+        <AddUserModal 
+          accounts={accounts} 
+          onClose={() => setShowAddModal(false)} 
+          onSuccess={() => {
+            setShowAddModal(false);
+            loadAccounts();
+          }} 
+        />
+      )}
     </div>
   );
 }
