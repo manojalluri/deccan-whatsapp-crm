@@ -52,6 +52,20 @@ function ViewMembersModal({
     fetchMembers();
   }, [accountId]);
 
+  const handleDeleteMember = async (userId: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this user? This cannot be undone.")) return;
+    
+    try {
+      const res = await fetch(`/api/agency/users/${userId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete user");
+      
+      setMembers(members.filter(m => m.id !== userId));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error deleting user");
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm px-4">
       <div className="max-w-xl w-full bg-slate-900 border border-slate-800 rounded-xl shadow-2xl flex flex-col max-h-[80vh]">
@@ -84,6 +98,14 @@ function ViewMembersModal({
                     <span className="bg-slate-800 text-slate-300 text-xs px-2 py-1 rounded capitalize border border-slate-700">
                       {m.account_role}
                     </span>
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      className="h-6 px-2 text-xs bg-red-900/50 hover:bg-red-900 text-red-200 border-red-800/50"
+                      onClick={() => handleDeleteMember(m.id)}
+                    >
+                      Delete
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -283,6 +305,20 @@ export function AgencyTab() {
     }
   };
 
+  const handleDeleteAccount = async (targetId: string) => {
+    if (!window.confirm("Are you sure you want to completely delete this workspace and ALL its users permanently? This cannot be undone.")) return;
+    
+    try {
+      const res = await fetch(`/api/agency/accounts/${targetId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete workspace");
+      
+      await loadAccounts();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error deleting workspace");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card className="border-slate-800 bg-slate-900">
@@ -368,15 +404,26 @@ export function AgencyTab() {
                           {format(new Date(acc.created_at), 'MMM d, yyyy')}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={isCurrent}
-                            onClick={() => handleImpersonate(acc.id)}
-                            className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
-                          >
-                            {isCurrent ? 'Current' : 'Enter Workspace'}
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={isCurrent}
+                              onClick={() => handleImpersonate(acc.id)}
+                              className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
+                            >
+                              {isCurrent ? 'Current' : 'Enter Workspace'}
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              disabled={isCurrent}
+                              onClick={() => handleDeleteAccount(acc.id)}
+                              className="bg-red-900/50 hover:bg-red-900 text-red-200 border border-red-800/50"
+                            >
+                              Delete
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );

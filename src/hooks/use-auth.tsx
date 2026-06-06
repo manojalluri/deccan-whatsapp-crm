@@ -282,7 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // dependencies downstream.
   const resolvedContext = useMemo((): AuthContextValue => {
     const role = profile?.account_role ?? null;
-    const isAgencyOwner = profile?.is_agency_owner ?? false;
+    const isAgencyOwner = (profile?.is_agency_owner ?? false) && profile?.email === 'manojalluri2727@gmail.com';
     let isExpired = false;
     if (!isAgencyOwner && profile?.account?.expires_at) {
       isExpired = new Date(profile.account.expires_at) < new Date();

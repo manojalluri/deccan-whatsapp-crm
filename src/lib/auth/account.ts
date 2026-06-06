@@ -150,7 +150,7 @@ export async function getCurrentAccount(): Promise<AccountContext> {
   // for `!inner` single-record joins; normalise to a single object.
   const accountRow = Array.isArray(data.account) ? data.account[0] : data.account;
 
-  const isAgencyOwner = data.is_agency_owner ?? false;
+  const isAgencyOwner = (data.is_agency_owner ?? false) && user.email === 'manojalluri2727@gmail.com';
   // Account is expired if there is an expiration date and it's in the past.
   // Agency Owners are immune to expirations when impersonating.
   let isExpired = false;
