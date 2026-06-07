@@ -36,9 +36,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const ctx = await getCurrentAccount()
-    const { user, account } = ctx
-    const userId = user.id
-    const accountId = account.id
+    const { userId, accountId } = ctx
 
   const body = (await request.json().catch(() => null)) as
     | {

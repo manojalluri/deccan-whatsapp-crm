@@ -286,6 +286,299 @@ const LEAD_CAPTURE: FlowTemplate = {
 };
 
 // ============================================================
+// 4. Order products — e-commerce catalog flow
+// ============================================================
+const ORDER_PRODUCTS: FlowTemplate = {
+  slug: "order_products",
+  name: "Order products",
+  description:
+    "Allow customers to browse your catalog and place orders directly via chat.",
+  icon: "MessageSquare",
+  trigger_type: "keyword",
+  trigger_config: {
+    keywords: ["order", "buy", "shop", "catalog", "products"],
+    match_type: "contains",
+  },
+  entry_node_id: "start",
+  nodes: [
+    {
+      node_key: "start",
+      node_type: "start",
+      config: { next_node_key: "welcome_shop" },
+    },
+    {
+      node_key: "welcome_shop",
+      node_type: "send_buttons",
+      config: {
+        text: "Hi! Ready to place an order? Check out our catalog below.",
+        footer_text: "Select an option",
+        buttons: [
+          {
+            reply_id: "view_catalog",
+            title: "View Catalog",
+            next_node_key: "catalog_link",
+          },
+          {
+            reply_id: "talk_to_sales",
+            title: "Talk to Sales",
+            next_node_key: "sales_handoff",
+          },
+        ],
+      } as SendButtonsNodeConfig,
+    },
+    {
+      node_key: "catalog_link",
+      node_type: "send_message",
+      config: {
+        text: "You can view our full product catalog and place your order directly here: https://yourstore.com/catalog \n\nOnce you've placed your order, let us know if you need any help!",
+        next_node_key: "end",
+      } as SendMessageNodeConfig,
+    },
+    {
+      node_key: "sales_handoff",
+      node_type: "handoff",
+      config: {
+        note: "Customer wants to talk to sales to place an order.",
+      } as HandoffNodeConfig,
+    },
+    {
+      node_key: "end",
+      node_type: "end",
+      config: {},
+    },
+  ],
+};
+
+// ============================================================
+// 5. Order tracking — collect order number and route to support
+// ============================================================
+const ORDER_TRACKING: FlowTemplate = {
+  slug: "order_tracking",
+  name: "Order tracking",
+  description:
+    "Collect order numbers from customers to give them status updates or hand off to support.",
+  icon: "HelpCircle",
+  trigger_type: "keyword",
+  trigger_config: {
+    keywords: ["track", "status", "where is my order"],
+    match_type: "contains",
+  },
+  entry_node_id: "start",
+  nodes: [
+    {
+      node_key: "start",
+      node_type: "start",
+      config: { next_node_key: "ask_order_number" },
+    },
+    {
+      node_key: "ask_order_number",
+      node_type: "collect_input",
+      config: {
+        prompt_text: "I can help with that! Please reply with your Order Number (e.g., ORD-12345).",
+        var_key: "order_number",
+        next_node_key: "handoff_tracking",
+      } as CollectInputNodeConfig,
+    },
+    {
+      node_key: "handoff_tracking",
+      node_type: "handoff",
+      config: {
+        note: "Customer is asking for order tracking status. Order number: {{vars.order_number}}",
+      } as HandoffNodeConfig,
+    },
+  ],
+};
+
+// ============================================================
+// 6. Event RSVP — collect registration details
+// ============================================================
+const EVENT_RSVP: FlowTemplate = {
+  slug: "event_rsvp",
+  name: "Event RSVP",
+  description: "Allow guests to easily register or RSVP for an upcoming event or webinar.",
+  icon: "UserPlus",
+  trigger_type: "keyword",
+  trigger_config: {
+    keywords: ["rsvp", "register", "event", "join"],
+    match_type: "contains",
+  },
+  entry_node_id: "start",
+  nodes: [
+    {
+      node_key: "start",
+      node_type: "start",
+      config: { next_node_key: "ask_attending" },
+    },
+    {
+      node_key: "ask_attending",
+      node_type: "send_buttons",
+      config: {
+        text: "Hi! Are you planning to attend our upcoming event?",
+        footer_text: "Please select an option",
+        buttons: [
+          {
+            reply_id: "yes",
+            title: "Yes, I'll be there!",
+            next_node_key: "ask_email",
+          },
+          {
+            reply_id: "no",
+            title: "No, I can't make it",
+            next_node_key: "msg_declined",
+          },
+        ],
+      } as SendButtonsNodeConfig,
+    },
+    {
+      node_key: "ask_email",
+      node_type: "collect_input",
+      config: {
+        prompt_text: "Awesome! What's the best email address to send your ticket/link to?",
+        var_key: "email",
+        next_node_key: "handoff_rsvp",
+      } as CollectInputNodeConfig,
+    },
+    {
+      node_key: "handoff_rsvp",
+      node_type: "handoff",
+      config: {
+        note: "RSVP Confirmed for event. Email: {{vars.email}}",
+      } as HandoffNodeConfig,
+    },
+    {
+      node_key: "msg_declined",
+      node_type: "send_message",
+      config: {
+        text: "No worries! We'll catch you at the next one.",
+        next_node_key: "end",
+      } as SendMessageNodeConfig,
+    },
+    {
+      node_key: "end",
+      node_type: "end",
+      config: {},
+    },
+  ],
+};
+
+// ============================================================
+// 7. Customer feedback — collect ratings after a purchase
+// ============================================================
+const CUSTOMER_FEEDBACK: FlowTemplate = {
+  slug: "customer_feedback",
+  name: "Customer feedback",
+  description: "Send an automated survey to collect ratings and feedback after a service or purchase.",
+  icon: "MessageSquare",
+  trigger_type: "keyword",
+  trigger_config: {
+    keywords: ["feedback", "review", "rate"],
+    match_type: "contains",
+  },
+  entry_node_id: "start",
+  nodes: [
+    {
+      node_key: "start",
+      node_type: "start",
+      config: { next_node_key: "ask_rating" },
+    },
+    {
+      node_key: "ask_rating",
+      node_type: "collect_input",
+      config: {
+        prompt_text: "Thanks for choosing us! On a scale of 1 to 5 (5 being the best), how would you rate your experience?",
+        var_key: "rating",
+        next_node_key: "ask_comment",
+      } as CollectInputNodeConfig,
+    },
+    {
+      node_key: "ask_comment",
+      node_type: "collect_input",
+      config: {
+        prompt_text: "We appreciate your rating! Is there anything specific we could improve, or anything you loved?",
+        var_key: "comment",
+        next_node_key: "handoff_feedback",
+      } as CollectInputNodeConfig,
+    },
+    {
+      node_key: "handoff_feedback",
+      node_type: "handoff",
+      config: {
+        note: "New Customer Feedback Received!\nRating: {{vars.rating}}/5\nComment: {{vars.comment}}",
+      } as HandoffNodeConfig,
+    },
+  ],
+};
+
+// ============================================================
+// 8. Appointment booking — schedule consultations
+// ============================================================
+const BOOK_APPOINTMENT: FlowTemplate = {
+  slug: "book_appointment",
+  name: "Book appointment",
+  description: "Let customers request a meeting or consultation date and hand it off to an agent.",
+  icon: "UserPlus",
+  trigger_type: "keyword",
+  trigger_config: {
+    keywords: ["book", "appointment", "consult", "meeting"],
+    match_type: "contains",
+  },
+  entry_node_id: "start",
+  nodes: [
+    {
+      node_key: "start",
+      node_type: "start",
+      config: { next_node_key: "ask_service" },
+    },
+    {
+      node_key: "ask_service",
+      node_type: "send_list",
+      config: {
+        text: "Hi! What kind of appointment would you like to schedule today?",
+        button_label: "View options",
+        sections: [
+          {
+            title: "Services",
+            rows: [
+              {
+                reply_id: "consultation",
+                title: "Free Consultation",
+                next_node_key: "ask_date",
+              },
+              {
+                reply_id: "service_call",
+                title: "Service Call",
+                next_node_key: "ask_date",
+              },
+              {
+                reply_id: "follow_up",
+                title: "Follow-up",
+                next_node_key: "ask_date",
+              },
+            ],
+          },
+        ],
+      } as SendListNodeConfig,
+    },
+    {
+      node_key: "ask_date",
+      node_type: "collect_input",
+      config: {
+        prompt_text: "Great! What date and time works best for you? (e.g., Tomorrow at 2 PM)",
+        var_key: "preferred_time",
+        next_node_key: "handoff_booking",
+      } as CollectInputNodeConfig,
+    },
+    {
+      node_key: "handoff_booking",
+      node_type: "handoff",
+      config: {
+        note: "Appointment Request. Preferred time: {{vars.preferred_time}}. Please confirm with the customer.",
+      } as HandoffNodeConfig,
+    },
+  ],
+};
+
+// ============================================================
 // Registry
 // ============================================================
 
@@ -293,6 +586,11 @@ const TEMPLATES: Record<string, FlowTemplate> = {
   welcome_menu: WELCOME_MENU,
   faq_bot: FAQ_BOT,
   lead_capture: LEAD_CAPTURE,
+  order_products: ORDER_PRODUCTS,
+  order_tracking: ORDER_TRACKING,
+  event_rsvp: EVENT_RSVP,
+  customer_feedback: CUSTOMER_FEEDBACK,
+  book_appointment: BOOK_APPOINTMENT,
 };
 
 export function getFlowTemplate(slug: string): FlowTemplate | null {
