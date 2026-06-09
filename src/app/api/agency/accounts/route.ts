@@ -28,7 +28,7 @@ export async function GET() {
       return NextResponse.json({ error: "Failed to load accounts" }, { status: 500 });
     }
 
-    const accountsWithCounts = data?.map((acc: any) => ({
+    const accountsWithCounts = data?.map((acc: { id: string, name: string, created_at: string, owner_user_id: string, expires_at: string | null, profiles: { id: string }[] }) => ({
       ...acc,
       memberCount: acc.profiles?.length || 0,
       profiles: undefined, // remove full array from response

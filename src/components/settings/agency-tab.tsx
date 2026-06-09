@@ -209,7 +209,7 @@ function AddUserModal({
                 </div>
                 <div>
                   <label className="block text-sm text-slate-400 mb-1">Role</label>
-                  <select required className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white" value={role} onChange={e => setRole(e.target.value as any)}>
+                  <select required className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white" value={role} onChange={e => setRole(e.target.value as "admin" | "agent" | "viewer")}>
                     <option value="admin">Admin</option>
                     <option value="agent">Agent</option>
                     <option value="viewer">Viewer</option>

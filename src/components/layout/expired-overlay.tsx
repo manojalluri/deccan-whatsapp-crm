@@ -17,7 +17,7 @@ export function ExpiredOverlay() {
         </div>
         <h1 className="text-2xl font-bold text-white mb-2">Subscription Expired</h1>
         <p className="text-slate-400 mb-6">
-          Your workspace's subscription has ended. Access to the CRM and messaging features has been locked.
+          Your workspace&apos;s subscription has ended. Access to the CRM and messaging features has been locked.
         </p>
         <p className="text-sm text-slate-500">
           Please contact your agency provider to renew your subscription and restore access.

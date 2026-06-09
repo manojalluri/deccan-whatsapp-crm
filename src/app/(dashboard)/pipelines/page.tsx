@@ -134,7 +134,7 @@ export default function PipelinesPage() {
     await supabase.from("pipeline_stages").insert(stagesPayload);
 
     return pipeline as Pipeline;
-  }, [supabase]);
+  }, [supabase, profile?.account_id]);
 
   // Initial load + seed-if-empty
   useEffect(() => {
